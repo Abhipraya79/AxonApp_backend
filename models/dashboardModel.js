@@ -1,73 +1,75 @@
 import pool from '../config/db.js';
 
 export const fetchKpiStats = async () => {
-  const [revenueRows] = await pool.query(
-    'SELECT COALESCE(SUM(quantityOrdered * priceEach), 0) AS totalRevenue FROM orderdetails'
+  // Di pg, data kembalian ada di dalam properti 'rows'
+  const { rows: revenueRows } = await pool.query(
+    'SELECT COALESCE(SUM(quantityordered * priceeach), 0) AS totalrevenue FROM orderdetails'
   );
-  const [ordersRows] = await pool.query(
-    'SELECT COUNT(*) AS totalOrders FROM orders'
+  const { rows: ordersRows } = await pool.query(
+    'SELECT COUNT(*) AS totalorders FROM orders'
   );
-  const [customersRows] = await pool.query(
-    'SELECT COUNT(*) AS totalCustomers FROM customers'
+  const { rows: customersRows } = await pool.query(
+    'SELECT COUNT(*) AS totalcustomers FROM customers'
   );
-  const [productsRows] = await pool.query(
-    'SELECT COUNT(*) AS totalProducts FROM products'
+  const { rows: productsRows } = await pool.query(
+    'SELECT COUNT(*) AS totalproducts FROM products'
   );
 
   return {
-    totalRevenue: parseFloat(revenueRows[0].totalRevenue || 0),
-    totalOrders: ordersRows[0].totalOrders,
-    totalCustomers: customersRows[0].totalCustomers,
-    totalProducts: productsRows[0].totalProducts,
+    totalRevenue: parseFloat(revenueRows[0].totalrevenue || 0),
+    // PostgreSQL me-return COUNT sebagai string (bigint), jadi harus di-parse ke integer
+    totalOrders: parseInt(ordersRows[0].totalorders, 10),
+    totalCustomers: parseInt(customersRows[0].totalcustomers, 10),
+    totalProducts: parseInt(productsRows[0].totalproducts, 10),
   };
 };
 
 export const fetchTopProducts = async (limit = 5) => {
-  const [rows] = await pool.query(
+  const { rows } = await pool.query(
     `SELECT 
-      p.productCode, 
-      p.productName, 
-      p.productLine, 
-      SUM(od.quantityOrdered) AS totalQuantitySold, 
-      SUM(od.quantityOrdered * od.priceEach) AS totalSales 
+      p.productcode, 
+      p.productname, 
+      p.productline, 
+      SUM(od.quantityordered) AS totalquantitysold, 
+      SUM(od.quantityordered * od.priceeach) AS totalsales 
      FROM orderdetails od 
-     JOIN products p ON od.productCode = p.productCode 
-     GROUP BY p.productCode, p.productName, p.productLine 
-     ORDER BY totalSales DESC 
-     LIMIT ?`,
+     JOIN products p ON od.productcode = p.productcode 
+     GROUP BY p.productcode, p.productname, p.productline 
+     ORDER BY totalsales DESC 
+     LIMIT $1`, // Menggunakan $1 untuk PostgreSQL
     [Number(limit)]
   );
   return rows;
 };
 
 export const fetchRecentOrders = async (limit = 5) => {
-  const [rows] = await pool.query(
+  const { rows } = await pool.query(
     `SELECT 
-      o.orderNumber, 
-      o.orderDate, 
+      o.ordernumber, 
+      o.orderdate, 
       o.status, 
-      c.customerName, 
-      SUM(od.quantityOrdered * od.priceEach) AS totalAmount 
+      c.customername, 
+      SUM(od.quantityordered * od.priceeach) AS totalamount 
      FROM orders o 
-     JOIN customers c ON o.customerNumber = c.customerNumber 
-     JOIN orderdetails od ON o.orderNumber = od.orderNumber 
-     GROUP BY o.orderNumber, o.orderDate, o.status, c.customerName 
-     ORDER BY o.orderDate DESC 
-     LIMIT ?`,
+     JOIN customers c ON o.customernumber = c.customernumber 
+     JOIN orderdetails od ON o.ordernumber = od.ordernumber 
+     GROUP BY o.ordernumber, o.orderdate, o.status, c.customername 
+     ORDER BY o.orderdate DESC 
+     LIMIT $1`, // Menggunakan $1 untuk PostgreSQL
     [Number(limit)]
   );
   return rows;
 };
 
 export const fetchMonthlySales = async () => {
-  const [rows] = await pool.query(
+  const { rows } = await pool.query(
     `SELECT 
-      DATE_FORMAT(o.orderDate, '%Y-%m') AS month,
-      SUM(od.quantityOrdered * od.priceEach) AS monthlyRevenue,
-      COUNT(DISTINCT o.orderNumber) AS orderCount
+      TO_CHAR(o.orderdate, 'YYYY-MM') AS month,
+      SUM(od.quantityordered * od.priceeach) AS monthlyrevenue,
+      COUNT(DISTINCT o.ordernumber) AS ordercount
      FROM orders o
-     JOIN orderdetails od ON o.orderNumber = od.orderNumber
-     GROUP BY DATE_FORMAT(o.orderDate, '%Y-%m')
+     JOIN orderdetails od ON o.ordernumber = od.ordernumber
+     GROUP BY TO_CHAR(o.orderdate, 'YYYY-MM')
      ORDER BY month ASC`
   );
   return rows;
