@@ -1,24 +1,12 @@
-import pg from 'pg';
-import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 
-dotenv.config();
-
-const { Pool } = pg;
-
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'axon_sales_try',
-  port: Number(process.env.DB_PORT) || 5432,
-  max: 10 // Mirip dengan connectionLimit di MySQL
-});
+const prisma = new PrismaClient();
 
 export const testConnection = async () => {
   try {
-    const client = await pool.connect();
-    console.log(`✅ Connected successfully to PostgreSQL Database: ${process.env.DB_NAME}`);
-    client.release();
+    // Jalankan query paling ringan untuk mengetes koneksi
+    await prisma.$queryRaw`SELECT 1`;
+    console.log(`✅ Connected successfully to PostgreSQL via Prisma ORM`);
     return true;
   } catch (error) {
     console.error(`❌ Database Connection Error: ${error.message}`);
@@ -26,4 +14,4 @@ export const testConnection = async () => {
   }
 };
 
-export default pool;
+export default prisma;

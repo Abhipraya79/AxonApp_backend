@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model productlines {
+  productline     String     @id @db.VarChar(50)
+  textdescription String?
+  htmldescription String?
+  image           Bytes?
+  products        products[]
+}
+
+model products {
+  productcode        String         @id @db.VarChar(15)
+  productname        String         @db.VarChar(70)
+  productline_id     String?        @map("productline") @db.VarChar(50)
+  productlines       productlines?  @relation(fields: [productline_id], references: [productline])
+  productscale       String         @db.VarChar(10)
+  productvendor      String         @db.VarChar(50)
+  productdescription String
+  quantityinstock    Int            @db.SmallInt
+  buyprice           Decimal        @db.Decimal(10, 2)
+  msrp               Decimal        @db.Decimal(10, 2)
+  orderdetails       orderdetails[]
+}
+
+model offices {
+  officecode   String      @id @db.VarChar(10)
+  city         String      @db.VarChar(50)
+  phone        String      @db.VarChar(50)
+  addressline1 String      @db.VarChar(50)
+  addressline2 String?     @db.VarChar(50)
+  state        String?     @db.VarChar(50)
+  country      String      @db.VarChar(50)
+  postalcode   String      @db.VarChar(15)
+  territory    String      @db.VarChar(10)
+  employees    employees[]
+}
+
+model employees {
+  employeenumber Int         @id
+  lastname       String      @db.VarChar(50)
+  firstname      String      @db.VarChar(50)
+  extension      String      @db.VarChar(10)
+  email          String      @db.VarChar(100)
+  officecode     String?     @db.VarChar(10)
+  offices        offices?    @relation(fields: [officecode], references: [officecode])
+  reportsto      Int?
+  manager        employees?  @relation("EmployeeToManager", fields: [reportsto], references: [employeenumber])
+  subordinates   employees[] @relation("EmployeeToManager")
+  jobtitle       String      @db.VarChar(50)
+  customers      customers[]
+}
+
+model customers {
+  customernumber         Int         @id
+  customername           String      @db.VarChar(50)
+  contactlastname        String      @db.VarChar(50)
+  contactfirstname       String      @db.VarChar(50)
+  phone                  String      @db.VarChar(50)
+  addressline1           String      @db.VarChar(50)
+  addressline2           String?     @db.VarChar(50)
+  city                   String      @db.VarChar(50)
+  state                  String?     @db.VarChar(50)
+  postalcode             String?     @db.VarChar(15)
+  country                String      @db.VarChar(50)
+  salesrepemployeenumber Int?
+  employees              employees?  @relation(fields: [salesrepemployeenumber], references: [employeenumber])
+  creditlimit            Decimal?    @db.Decimal(10, 2)
+  orders                 orders[]
+  payments               payments[]
+}
+
+model orders {
+  ordernumber    Int            @id
+  orderdate      DateTime       @db.Date
+  requireddate   DateTime       @db.Date
+  shippeddate    DateTime?      @db.Date
+  status         String         @db.VarChar(15)
+  comments       String?
+  customernumber Int?
+  customers      customers?     @relation(fields: [customernumber], references: [customernumber])
+  orderdetails   orderdetails[]
+}
+
+model orderdetails {
+  ordernumber     Int
+  productcode     String   @db.VarChar(15)
+  quantityordered Int
+  priceeach       Decimal  @db.Decimal(10, 2)
+  orderlinenumber Int      @db.SmallInt
+  orders          orders   @relation(fields: [ordernumber], references: [ordernumber])
+  products        products @relation(fields: [productcode], references: [productcode])
+
+  @@id([ordernumber, productcode])
+}
+
+model payments {
+  customernumber Int?
+  customers      customers? @relation(fields: [customernumber], references: [customernumber])
+  checknumber    String     @id @db.VarChar(50)
+  paymentdate    DateTime   @db.Date
+  amount         Decimal    @db.Decimal(10, 2)
+}
