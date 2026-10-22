@@ -4,6 +4,9 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# Install OpenSSL compatibility for Prisma (required for both x86_64 and ARM64)
+RUN apk add --no-cache openssl libc6-compat
+
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -20,8 +23,14 @@ COPY . .
 # Stage 2: Production
 FROM node:18-alpine
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install runtime dependencies for Prisma on Alpine
+# - openssl: Required for Prisma query engine
+# - dumb-init: Proper signal handling
+# - libc6-compat: Compatibility layer for glibc-based binaries
+RUN apk add --no-cache \
+    dumb-init \
+    openssl \
+    libc6-compat
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
