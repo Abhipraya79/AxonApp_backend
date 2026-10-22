@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+.agents/
+.claude/
+.windsurf/
+
+# Documentation
+*.md
+!README.md
+
+# Database
+*.dump
+*.sql
+*.backup
+db-init/
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage/
+.nyc_output/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+tmp/
+temp/
+prd_extracted.xml
+prd_text.txt
