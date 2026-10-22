@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: axon_database_prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    networks:
+      - axon-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # No port published - internal access only
+
+  axon-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: axon_backend_prod
+    restart: always
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres-db:5432/${DB_NAME}?schema=public
+      PORT: 5000
+      CLIENT_URL: ${CLIENT_URL}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - axon-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  pgdata_prod:
+    driver: local
+
+networks:
+  axon-network:
+    driver: bridge
