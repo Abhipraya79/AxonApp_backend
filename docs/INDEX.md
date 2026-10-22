@@ -66,6 +66,14 @@ Folder ini berisi semua dokumentasi teknis, security audit, dan panduan deployme
    - Frontend integration guide
    - Status: ✅ Reference Document
 
+
+9. **[DEVSECOPS_SECURITY_CHECKLIST.md](./DEVSECOPS_SECURITY_CHECKLIST.md)**
+   - Comprehensive security audit berdasarkan materi kuliah Bab 1-5
+   - NIST SSDF compliance checklist
+   - OWASP Top 10 mapping
+   - Docker, CI/CD, Secrets Management audit
+   - Score: 91% compliance (59/65)
+   - Status: ✅ Passed with Recommendations
 ### 🗄️ **Raw Files** (Archive)
 
 7. **prd_extracted.xml**
@@ -145,3 +153,4 @@ For questions or issues:
 ---
 
 **Documentation Status:** ✅ **COMPLETE & UP-TO-DATE**
+
