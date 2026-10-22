@@ -4,66 +4,32 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
 
 jobs:
   deploy:
-    name: Deploy to Production
+    name: Deploy via Portainer Webhook
     runs-on: ubuntu-latest
-    # Only run on tag push or manual trigger
-    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-
-      - name: Build Docker image
+      - name: Trigger Portainer Deployment
         run: |
-          docker build -t axon-backend:${{ github.ref_name }} .
-          docker tag axon-backend:${{ github.ref_name }} axon-backend:latest
-
-      - name: Save Docker image
-        run: docker save axon-backend:latest | gzip > axon-backend.tar.gz
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: axon-backend.tar.gz
-          retention-days: 7
+          echo "🚀 Triggering Portainer webhook deployment..."
+          curl -X POST ${{ secrets.PORTAINER_WEBHOOK_URL }}
+          echo "✅ Webhook triggered successfully"
 
       - name: Deployment Summary
         run: |
-          echo "🚀 Deployment Artifact Created"
-          echo "Tag: ${{ github.ref_name }}"
-          echo "Image: axon-backend:${{ github.ref_name }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎯 Deployment Status"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Branch: main"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          echo "Webhook: Triggered"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Manual deployment steps:"
-          echo "1. Download artifact from Actions"
-          echo "2. Load image: docker load < axon-backend.tar.gz"
-          echo "3. Deploy: docker compose -f docker-compose.prod.yml up -d"
-
-      # Uncomment below for automatic deployment to your server
-      # - name: Deploy to server
-      #   uses: appleboy/ssh-action@master
-      #   with:
-      #     host: ${{ secrets.SERVER_HOST }}
-      #     username: ${{ secrets.SERVER_USER }}
-      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     script: |
-      #       cd /path/to/app
-      #       docker compose -f docker-compose.prod.yml pull
-      #       docker compose -f docker-compose.prod.yml up -d
-      #       docker compose -f docker-compose.prod.yml exec axon-backend npx prisma migrate deploy
+          echo "Portainer will now:"
+          echo "1. Pull latest code from repository"
+          echo "2. Rebuild Docker image"
+          echo "3. Deploy updated container"
+          echo "4. Run Prisma migrations (if configured)"
